@@ -59,7 +59,7 @@ client.on('interactionCreate', async (interaction) => {
                 embeds: [{
                     color: 0x274666,
                     title: '🔗 Hyperlink Generated',
-                    description: 'Your link is ready!\n\nClick on the code block below to copy it'
+                    description: 'Your link is ready!\n👇\n🖱️Click on the code block below to copy it'
                 }]
             });
 
