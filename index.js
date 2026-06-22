@@ -73,7 +73,7 @@ client.on('interactionCreate', async (interaction) => {
             console.error('Failed to send DM:', error);
             const fullShortUrl = shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`;
             await interaction.followUp({
-                content: `⚠️ Failed to send DM. Here is your link: [\`${visualUrl}\`](${fullShortUrl})`,
+                content: `⚠️ Failed to send DM. Here is your link: [\`${visualUrl}\](${fullShortUrl})``,
                 flags: [MessageFlags.Ephemeral]
             });
         }
