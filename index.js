@@ -64,7 +64,7 @@ client.on('interactionCreate', async (interaction) => {
 
             // ЧИСТЫЙ ВАРИАНТ — именно так, как ты хочешь
             await interaction.user.send({
-                content: `[\`${visualUrl}\`](${shortUrl})`
+                content: `\`[${visualUrl}](${shortUrl})\`` 
             });
 
         } catch (error) {
