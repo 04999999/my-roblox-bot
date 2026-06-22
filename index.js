@@ -1,49 +1,36 @@
 require('dotenv').config();
-const { 
-  Client, 
-  GatewayIntentBits, 
-  ActionRowBuilder, 
-  ModalBuilder, 
-  TextInputBuilder, 
-  TextInputStyle, 
-  MessageFlags 
-} = require('discord.js');
-
+const { Client, GatewayIntentBits, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } = require('discord.js');
 const express = require('express');
 const app = express();
 
-const client = new Client({ 
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] 
-});
-
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] });
 const linksDb = {};
 
-// ====================== WEB SERVER (очень лёгкий) ======================
-app.get('/', (req, res) => res.send('ok'));           // максимально быстрый пинг
-app.get('/ping', (req, res) => res.send('ok'));       // для UptimeRobot
+// === WEB SERVER ===
+app.get('/', (req, res) => res.send('ok'));
+app.get('/ping', (req, res) => res.send('ok'));   // для UptimeRobot
 
 app.get('/r/:id', (req, res) => {
   const originalUrl = linksDb[req.params.id];
   if (originalUrl) return res.redirect(originalUrl);
-  res.status(404).send('Link not found');
+  res.status(404).send('Not found');
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server on ${PORT}`));
 
-// ====================== DISCORD BOT ======================
-client.once('ready', () => {
-  console.log(`✅ Bot ${client.user.tag} is ready!`);
-});
+// === BOT ===
+client.once('ready', () => console.log(`✅ Bot ${client.user.tag} ready!`));
 
 client.on('interactionCreate', async (interaction) => {
-  const time = Date.now();
+  console.log(`[LOG] Interaction: ${interaction.type} | ${interaction.customId || 'no customId'}`);
 
   if (interaction.isButton() && interaction.customId === 'create_hyperlink') {
-    console.log(`🟢 BUTTON PRESSED at ${time} by ${interaction.user.tag}`);
+    console.log(`🟢 BUTTON PRESSED by ${interaction.user.tag}`);
 
     try {
-      // Самый быстрый способ открыть модалку
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
       const modal = new ModalBuilder()
         .setCustomId('link_modal')
         .setTitle('Create Hidden Link');
@@ -57,16 +44,18 @@ client.on('interactionCreate', async (interaction) => {
 
       modal.addComponents(new ActionRowBuilder().addComponents(input));
 
-      await interaction.showModal(modal);
-      console.log(`✅ Modal shown in ${Date.now() - time}ms`);
-    } catch (err) {
-      console.error(`❌ SHOW MODAL ERROR:`, err.message);
+      await interaction.followup.send({ content: 'Открываю форму...', flags: [MessageFlags.Ephemeral] });
+      await interaction.showModal(modal);   // иногда помогает после defer
+
+      console.log(`✅ Modal shown`);
+    } catch (e) {
+      console.error(`❌ ERROR:`, e.message);
     }
     return;
   }
 
   if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
-    console.log(`📝 MODAL SUBMITTED by ${interaction.user.tag}`);
+    console.log(`📝 MODAL SUBMITTED`);
 
     try {
       const url = interaction.fields.getTextInputValue('url_input');
@@ -84,20 +73,16 @@ client.on('interactionCreate', async (interaction) => {
       });
 
       await interaction.user.send({
-        embeds: [{
-          color: 0x274666,
-          title: '🔗 Hyperlink Generated',
-          description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
-        }]
+        embeds: [{ color: 0x274666, title: '🔗 Hyperlink Generated', description: '👇 **Твоя ссылка готова!**\nКликни ниже чтобы скопировать' }]
       });
 
       await interaction.user.send({
         content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
       });
-    } catch (err) {
-      console.error('Modal error:', err);
+    } catch (e) {
+      console.error('Modal error:', e);
     }
   }
 });
 
-client.login(process.env.TOKEN).catch(err => console.error('Login error:', err));
+client.login(process.env.TOKEN);
