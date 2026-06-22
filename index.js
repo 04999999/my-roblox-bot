@@ -37,11 +37,9 @@ client.once('ready', () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
-  const startTime = Date.now();
-
   // ==================== КНОПКА ====================
   if (interaction.isButton() && interaction.customId === 'create_hyperlink') {
-    console.log(`🟢 [${Date.now()}] Button pressed by ${interaction.user.tag} (${interaction.guild?.name || 'DM'})`);
+    console.log(`🟢 Button pressed by ${interaction.user.tag}`);
 
     try {
       const modal = new ModalBuilder()
@@ -58,10 +56,8 @@ client.on('interactionCreate', async (interaction) => {
       modal.addComponents(new ActionRowBuilder().addComponents(input));
 
       await interaction.showModal(modal);
-      console.log(`✅ [${Date.now() - startTime}ms] Modal shown successfully`);
-
     } catch (error) {
-      console.error(`❌ [${Date.now() - startTime}ms] Error showing modal:`, error.message);
+      console.error('Error showing modal:', error.message);
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '❌ Не удалось открыть форму. Попробуй ещё раз.',
@@ -103,6 +99,7 @@ client.on('interactionCreate', async (interaction) => {
           }]
         });
 
+        // ←←← ИСПРАВЛЕННАЯ ОТПРАВКА ←←←
         await interaction.user.send({
           content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
         });
@@ -123,6 +120,6 @@ client.on('interactionCreate', async (interaction) => {
       }).catch(() => {});
     }
   }
-}); // ←←← Вот эта закрывающая скобка была пропущена!
+});
 
 client.login(process.env.TOKEN).catch(err => console.error('Login error:', err));
