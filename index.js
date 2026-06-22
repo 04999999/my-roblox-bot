@@ -62,7 +62,7 @@ client.on('interactionCreate', async (interaction) => {
                 }]
             });
 
-            // ИСПРАВЛЕННЫЙ ВАРИАНТ — именно так, как ты хочешь
+            // ЧИСТЫЙ ВАРИАНТ — именно так, как ты хочешь
             await interaction.user.send({
                 content: `[\`${visualUrl}\`](${shortUrl})`
             });
