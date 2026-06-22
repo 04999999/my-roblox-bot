@@ -62,15 +62,18 @@ client.on('interactionCreate', async (interaction) => {
                 }]
             });
 
-            // ЧИСТЫЙ ВАРИАНТ — именно так, как ты хочешь
+            // Финальный исправленный вариант
+            const fullShortUrl = shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`;
+
             await interaction.user.send({
-                content: `\`[${visualUrl}](${shortUrl})\`` 
+                content: `[\`${visualUrl}\`](${fullShortUrl})`
             });
 
         } catch (error) {
             console.error('Failed to send DM:', error);
+            const fullShortUrl = shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`;
             await interaction.followUp({
-                content: `⚠️ Failed to send DM. Here is your link: [\`${visualUrl}\`](https://${shortUrl.replace('https://', '')})`,
+                content: `⚠️ Failed to send DM. Here is your link: [\`${visualUrl}\`](${fullShortUrl})`,
                 flags: [MessageFlags.Ephemeral]
             });
         }
