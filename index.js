@@ -66,7 +66,7 @@ client.on('interactionCreate', async (interaction) => {
             const fullShortUrl = shortUrl.startsWith('http') ? shortUrl : `https://${shortUrl}`;
 
             await interaction.user.send({
-                content: `[\`${visualUrl}\`](${fullShortUrl})`
+                content: `\`[${visualUrl}](${fullShortUrl})\``
             });
 
         } catch (error) {
