@@ -6,16 +6,16 @@ console.log("✅ discord.js imported");
 
 const express = require('express');
 const app = express();
-console.log("✅ express imported");
+
+console.log("TOKEN exists:", !!process.env.TOKEN);
+console.log("BASE_URL exists:", !!process.env.BASE_URL);
 
 const client = new Client({ 
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] 
 });
 const linksDb = {};
 
-console.log("✅ Variables initialized");
-
-// ====================== WEB SERVER ======================
+// WEB SERVER
 app.get('/', (req, res) => res.send('Bot is active!'));
 app.get('/ping', (req, res) => res.send('ok'));
 
@@ -27,11 +27,9 @@ app.get('/r/:id', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Web server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Web server running on port ${PORT}`));
 
-// ====================== BOT ======================
+// BOT
 client.once('ready', () => {
     console.log(`✅ Bot ${client.user.tag} is ready!`);
 });
@@ -55,14 +53,13 @@ client.on('interactionCreate', async (interaction) => {
 
             await interaction.showModal(modal);
         } catch (err) {
-            console.error('❌ Modal error:', err.message);
+            console.error('❌ Show modal error:', err.message);
         }
         return;
     }
 
+    // Модалка (оставил как было)
     if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
-        console.log(`📝 Modal submitted`);
-        // ... остальной код модалки без изменений
         try {
             const url = interaction.fields.getTextInputValue('url_input');
             const id = Math.random().toString(36).substring(7);
@@ -88,12 +85,16 @@ client.on('interactionCreate', async (interaction) => {
                 content: `[\`${visualUrl}\`](${shortUrl})`
             });
         } catch (error) {
-            console.error('❌ Processing error:', error);
+            console.error('❌ Error processing modal:', error);
         }
     }
 });
 
-console.log("✅ Starting bot login...");
-client.login(process.env.TOKEN).catch(err => {
-    console.error("❌ LOGIN FAILED:", err.message);
-});
+if (!process.env.TOKEN) {
+    console.error("❌ TOKEN IS MISSING! Bot cannot start.");
+} else {
+    console.log("✅ Starting login...");
+    client.login(process.env.TOKEN).catch(err => {
+        console.error("❌ LOGIN FAILED:", err.message);
+    });
+}
