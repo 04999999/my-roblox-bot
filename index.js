@@ -54,7 +54,6 @@ client.on('interactionCreate', async (interaction) => {
 
         // Отправка в ЛС
         try {
-            // Первое сообщение (эмбед)
             await interaction.user.send({
                 embeds: [{
                     color: 0x274666,
@@ -63,7 +62,7 @@ client.on('interactionCreate', async (interaction) => {
                 }]
             });
 
-            // Второе сообщение — именно так, как ты хочешь
+            // ИСПРАВЛЕННЫЙ ВАРИАНТ — именно так, как ты хочешь
             await interaction.user.send({
                 content: `[\`${visualUrl}\`](${shortUrl})`
             });
